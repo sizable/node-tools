@@ -30,7 +30,7 @@ class Initrd():
         self.scripts = { 
 
             # script to configure the network
-            "configure_network":
+            "configure-network":
 """#!/bin/sh
 
 ifconfig lo 127.0.0.1 netmask 255.0.0.0 up
