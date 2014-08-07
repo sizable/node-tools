@@ -6,6 +6,7 @@ import sys
 import rados
 import shutil
 import re
+import io
 
 class Initrd():
     def __init__(self, original_initrd):
