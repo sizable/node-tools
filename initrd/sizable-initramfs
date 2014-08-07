@@ -171,8 +171,8 @@ if original_initrd == None:
     exit(1)
 
 initrd = Initrd(original_initrd)
-initrd.unpack()
-initrd.mod()
-initrd.repack()
+#initrd.unpack()
+#initrd.mod()
+#initrd.repack()
 initrd.put()
-initrd.remove()
+#initrd.remove()
