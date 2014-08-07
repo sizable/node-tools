@@ -21,9 +21,9 @@ class Initrd():
 
         # bring in these specific libraries
         self.extra_libs = [
-            /usr/lib/x86_64-linux-gnu/nss/libfreebl3.so, 
-            /usr/lib/x86_64-linux-gnu/nss/libsoftokn3.so,
-            /usr/lib/x86_64-linux-gnu/libsqlite3.so.0,
+            "/usr/lib/x86_64-linux-gnu/nss/libfreebl3.so", 
+            "/usr/lib/x86_64-linux-gnu/nss/libsoftokn3.so",
+            "/usr/lib/x86_64-linux-gnu/libsqlite3.so.0",
         ]
 
         # bring in these scripts 
