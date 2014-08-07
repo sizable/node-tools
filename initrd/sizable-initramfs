@@ -124,7 +124,7 @@ rbd --id admin map ubuntu-2
         os.system(cpio_command)
 
     def repack(self):
-        filename = ("/".join([self.TMPDIR, self.PROGRAM_NAME, self.PID, "initrd"]))
+        filename = ("/".join([self.TMPDIR, self.PROGRAM_NAME, "initrd"]))
 
         cpio_command = " ".join([ "find . |", "cpio --create --format=newc |", "gzip -c > ", filename ])
 
@@ -148,8 +148,7 @@ rbd --id admin map ubuntu-2
         cluster.shutdown()  # disconnect
 
     def remove(self):
-        shutil.rmtree(self.initrd_tmpdir)
-        os.rmdir("/".join([self.TMPDIR, self.PROGRAM_NAME]))
+        shutil.rmtree("/".join([self.TMPDIR, self.PROGRAM_NAME]))
 
 
 
