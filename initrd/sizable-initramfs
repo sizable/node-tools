@@ -138,11 +138,12 @@ rbd --id admin map ubuntu-2
         cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
         cluster.connect()
         ioctx = cluster.open_ioctx('cephfs')
+        ioctx.trunc('initrd', 0)
 
         with io.open(file_name, 'rb') as initrd_fd:
             fbuf = io.BufferedReader(initrd_fd)
-            for buf in fbuf.read(4194304):
-                ioctx.aio_append('initrd', buf)
+            for chunk in fbuf.read(4194304):
+                ioctx.aio_append('initrd', chunk)
 
         ioctx.close()
         cluster.shutdown()  # disconnect
