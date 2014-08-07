@@ -142,7 +142,7 @@ rbd --id admin map ubuntu-2
         with io.open(file_name, 'rb') as initrd_fd:
             fbuf = io.BufferedReader(initrd_fd)
             for buf in fbuf.read(4194304):
-                ioctx.aio_append(buf)
+                ioctx.aio_append('initrd', buf)
 
         ioctx.close()
         cluster.shutdown()  # disconnect
