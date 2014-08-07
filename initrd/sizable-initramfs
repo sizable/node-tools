@@ -1,0 +1,164 @@
+#!/usr/bin/python
+
+import os
+import string
+import sys
+import rados
+import shutil
+import re
+
+class Initrd():
+    def __init__(self, original_initrd):
+        self.TMPDIR = "/tmp"
+        self.PID = str(os.getpid())
+        self.PROGRAM_NAME = os.path.basename(sys.argv[0])
+
+        self.original_initrd = original_initrd
+        self.initrd_tmpdir = "/".join([self.TMPDIR, 
+                               self.PROGRAM_NAME, 
+                               self.PID])
+        self.scripts = { 
+
+            # script to configure the network
+            "configure_network":
+"""#!/bin/sh
+
+ifconfig lo 127.0.0.1 netmask 255.0.0.0 up
+ifconfig eth0 192.168.2.112 netmask 255.255.255.0 up
+hostname ubuntu-2
+sleep 5
+
+ping -c1 192.168.2.1 || sh
+""",
+
+            # script to load rbd module and attach root drive
+            "rbd":
+"""#!/bin/sh
+
+modprobe rbd
+rbd --id admin map ubuntu-2
+""",
+            # script to run the other scripts
+            "ORDER":
+"""
+/scripts/local-top/configure-network
+/scripts/local-top/rbd
+""",
+        }
+        
+        os.makedirs(self.initrd_tmpdir)
+        os.chdir(self.initrd_tmpdir)
+
+    def mod(self):
+        self._create_rbd_scripts()
+        self._copy_ceph_conf()
+        self._add_program("rbd")
+        self._add_program("ping")
+        self._fix_lvm_conf()
+        
+    def _cp_dependencies(self, program_name):
+        lib_dir = "/".join([self.initrd_tmpdir, "lib"])
+        
+        # read in the output of ldd for the program
+        output = os.popen(" ".join(["ldd", program_name])).read()
+        lines = output.split("\n")
+        skip = re.compile("(^\s*$|.*linux-vdso|.*ld-linux)")
+        for line in lines:
+            if not skip.match(line):
+                parts = line.split()
+                lib_name = os.path.basename(parts[0])
+                lib_path = parts[2]
+                os.system(" ".join(["cp ", lib_path, lib_dir]))
+        
+    def _create_rbd_scripts(self):
+        self.rbd_script_dir = "scripts/local-top"
+        if not os.path.isdir(self.rbd_script_dir):
+            os.mkdir(self.rbd_script_dir)
+        for key in self.scripts.keys():
+            self._create_script(key)
+
+    def _create_script(self, script_name):
+        script_path = "/".join([self.rbd_script_dir, script_name])
+        with open(script_path, 'w') as script_fd:
+            script_fd.write(self.scripts[script_name])
+            script_fd.close()
+        os.chmod(script_path, 0755)
+
+    def _copy_ceph_conf(self):
+        etc_dir = "/".join([self.initrd_tmpdir, "etc"])
+        os.system(" ".join(["cp -rp", "/etc/ceph", etc_dir]))
+
+    def _add_program(self, program_name):
+        bin_dir = "/".join([self.initrd_tmpdir, "bin"])
+        program_path =  os.popen(" ".join(["which", program_name])).read().strip()
+        os.system(" ".join(["cp ", program_path, bin_dir]))
+        self._cp_dependencies(program_path)
+
+    def _fix_lvm_conf(self):
+        etc_lvm_dir = "/".join([self.initrd_tmpdir, "etc/lvm"])
+        old_lvm_conf_fd = open("/etc/lvm/lvm.conf")
+        new_lvm_conf_fd = open("/".join([etc_lvm_dir, "lvm.conf"]), 'w')
+        devices = re.compile("^devices {")
+        for line in old_lvm_conf_fd.readline():
+            new_lvm_conf_fd.write(line)
+            if devices.match(line):
+                new_lvm_conf_fd.write("    # discover rbd devices\n")
+                new_lvm_conf_fd.write('    types = [ "rbd", 1024 ]\n')
+
+    def unpack(self):
+        cpio_command = " ".join(["zcat", self.original_initrd, "| cpio -i"])
+        os.system(cpio_command)
+
+    def repack(self):
+        filename = ("/".join([self.TMPDIR, self.PROGRAM_NAME, self.PID, "initrd"]))
+
+        cpio_command = " ".join([ "find . |", "cpio --create --format=newc |", "gzip -c > ", filename ])
+
+        os.system(cpio_command)
+        self.new_initrd_filename = filename
+
+    def put(self):
+        file = self.new_initrd_filename
+
+        initrd_fd = open(file)
+        whole_fucking_file = initrd_fd.read()
+        initrd_fd.close()
+
+        file_basename = os.path.basename(file)
+
+        cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
+        cluster.connect()
+        ioctx = cluster.open_ioctx('cephfs')
+        ioctx.write_full(file_basename, whole_fucking_file)
+        ioctx.close()
+        cluster.shutdown()  # disconnect
+
+    def remove(self):
+        shutil.rmtree(self.initrd_tmpdir)
+        os.rmdir("/".join([self.TMPDIR, self.PROGRAM_NAME]))
+
+
+
+
+def usage():
+    print "usage: ", sys.argv[0], " /PATH/TO/GZIPPED_INITRD"
+
+def get_original_initrd():
+    if len(sys.argv) != 2:
+        return None
+        
+    original_initrd = sys.argv[1]
+    print "working on ", original_initrd
+    return original_initrd
+    
+original_initrd = get_original_initrd()
+if original_initrd == None:
+    usage()
+    exit(1)
+
+initrd = Initrd(original_initrd)
+initrd.unpack()
+initrd.mod()
+initrd.repack()
+initrd.put()
+initrd.remove()
