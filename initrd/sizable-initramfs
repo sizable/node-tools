@@ -139,7 +139,7 @@ rbd --id admin map ubuntu-2
         cluster.connect()
         ioctx = cluster.open_ioctx('cephfs')
 
-        with open(file_name, 'rb') as initrd_fd:
+        with io.open(file_name, 'rb') as initrd_fd:
             fbuf = io.BufferedReader(initrd_fd)
             for buf in fbuf.read(4194304):
                 ioctx.aio_append(buf)
