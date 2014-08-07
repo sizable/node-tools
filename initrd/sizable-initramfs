@@ -127,7 +127,7 @@ rbd --id admin map ubuntu-2
 
     def repack(self):
 
-        cpio_command = " ".join([ "find . |", "cpio --create --format=newc |", "gzip -c > ", self.filename ])
+        cpio_command = " ".join([ "find . |", "cpio --create --format=newc |", "gzip -c > ", self.new_initrd_filename ])
 
         os.system(cpio_command)
 
