@@ -19,6 +19,7 @@ class Initrd():
                                self.PROGRAM_NAME, 
                                self.PID])
         self.lib_dir = "/".join([self.initrd_tmpdir, "lib"])
+        self.new_initrd_filename = "/".join([self.TMPDIR, self.PROGRAM_NAME, "initrd"])
 
         # bring in these specific libraries
         self.extra_libs = [
@@ -125,12 +126,10 @@ rbd --id admin map ubuntu-2
         os.system(cpio_command)
 
     def repack(self):
-        filename = ("/".join([self.TMPDIR, self.PROGRAM_NAME, "initrd"]))
 
-        cpio_command = " ".join([ "find . |", "cpio --create --format=newc |", "gzip -c > ", filename ])
+        cpio_command = " ".join([ "find . |", "cpio --create --format=newc |", "gzip -c > ", self.filename ])
 
         os.system(cpio_command)
-        self.new_initrd_filename = filename
 
     def put(self):
         file_name = self.new_initrd_filename
