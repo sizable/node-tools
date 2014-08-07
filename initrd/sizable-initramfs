@@ -113,7 +113,7 @@ rbd --id admin map ubuntu-2
         old_lvm_conf_fd = open("/etc/lvm/lvm.conf")
         new_lvm_conf_fd = open("/".join([etc_lvm_dir, "lvm.conf"]), 'w')
         devices = re.compile("^devices {")
-        for line in old_lvm_conf_fd.readline():
+        for line in old_lvm_conf_fd.readlines():
             new_lvm_conf_fd.write(line)
             if devices.match(line):
                 new_lvm_conf_fd.write("    # discover rbd devices\n")
