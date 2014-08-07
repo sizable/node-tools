@@ -82,7 +82,7 @@ rbd --id admin map ubuntu-2
     def _cp_other_libs(self):
         # some libs are required but don't show up in ldd
         for lib in self.extra_libs:
-            os.system(" ".join(["cp", lib, self.lib_dir])
+            os.system(" ".join(["cp", lib, self.lib_dir]))
 
     def _create_rbd_scripts(self):
         self.rbd_script_dir = "scripts/local-top"
