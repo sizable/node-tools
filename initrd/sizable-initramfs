@@ -140,10 +140,12 @@ rbd --id admin map ubuntu-2
         ioctx = cluster.open_ioctx('cephfs')
         ioctx.trunc('initrd', 0)
 
-        with io.open(file_name, 'rb', 4194304) as initrd_fd:
-            fbuf = io.BytesIO(initrd_fd)
-            for chunk in fbuf.read():
+        with io.open(file_name, 'rb', 268435456) as initrd_fd:
+            fbuf = io.BufferedReader(initrd_fd)
+	    chunk = fbuf.read1(268435456)
+            while len(chunk) > 0:
                 ioctx.aio_append('initrd', chunk)
+	        chunk = fbuf.read1(268435456)
 
         ioctx.close()
         cluster.shutdown()  # disconnect
@@ -171,8 +173,8 @@ if original_initrd == None:
     exit(1)
 
 initrd = Initrd(original_initrd)
-#initrd.unpack()
-#initrd.mod()
-#initrd.repack()
+initrd.unpack()
+initrd.mod()
+initrd.repack()
 initrd.put()
-#initrd.remove()
+initrd.remove()
