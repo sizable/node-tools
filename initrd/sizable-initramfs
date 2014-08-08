@@ -150,6 +150,11 @@ rbd --id admin map ubuntu-2
         ioctx.close()
         cluster.shutdown()  # disconnect
 
+    def put_sys
+        file_name = self.new_initrd_filename
+        file_basename = os.path.basename(file_name)
+        os.system(" ".join(["rados -p cephfs put initrd", file_name]))
+
     def remove(self):
         shutil.rmtree("/".join([self.TMPDIR, self.PROGRAM_NAME]))
 
@@ -176,5 +181,5 @@ initrd = Initrd(original_initrd)
 initrd.unpack()
 initrd.mod()
 initrd.repack()
-initrd.put()
+initrd.put_sys()
 initrd.remove()
