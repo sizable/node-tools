@@ -141,8 +141,8 @@ rbd --id admin map ubuntu-2
         ioctx.trunc('initrd', 0)
 
         with io.open(file_name, 'rb', 4194304) as initrd_fd:
-            fbuf = io.BufferedReader(initrd_fd)
-            for chunk in fbuf.read(4194304):
+            fbuf = io.BytesIO(initrd_fd)
+            for chunk in fbuf.read():
                 ioctx.aio_append('initrd', chunk)
 
         ioctx.close()
